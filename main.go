@@ -6,6 +6,7 @@ import "time"
 
 type Canvas struct {
 	Width, Height int
+	squares [][]int
 }
 
 type Cursor struct {
@@ -75,7 +76,7 @@ func main() {
 			event_queue <- termbox.PollEvent()
 		}
 	}()
-	
+
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed}
 	cPtr := &c
@@ -101,7 +102,7 @@ loop:
 					cPtr.placeColor()
 				case termbox.KeyTab:
 					cPtr.changeColor()
-				case termbox.KeyBackspace:
+				case termbox.KeyBackspace, termbox.KeyBackspace2:
 					cPtr.delete()
 				default:
 					draw(cPtr)
