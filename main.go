@@ -40,7 +40,7 @@ func (can *Canvas) Save() {
 type Cursor struct {
 	xCoord, yCoord int
 	color          termbox.Attribute
-	colorInt int
+	colorInt       int
 }
 
 func (c *Cursor) moveLeft() {
@@ -140,17 +140,17 @@ loop:
 					cPtr.placeColor(canPtr)
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
 					cPtr.delete(canPtr)
-				// default:
-				// 	draw(cPtr)
-				// 	time.Sleep(10 * time.Millisecond)
+					// default:
+					// 	draw(cPtr)
+					// 	time.Sleep(10 * time.Millisecond)
 				}
 				draw(cPtr, canPtr)
 			case termbox.EventError:
 				panic(ev.Err)
 			}
-		// case <-disTimer.C:
-		// 	termbox.HideCursor()
-		// 	termbox.Flush()
+			// case <-disTimer.C:
+			// 	termbox.HideCursor()
+			// 	termbox.Flush()
 		}
 	}
 }
