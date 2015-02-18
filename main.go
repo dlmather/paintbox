@@ -1,12 +1,14 @@
 package main
 
-import "github.com/nsf/termbox-go"
-
-// import "io/ioutil"
-// import "math/rand"
-import "time"
-import "fmt"
-import "os"
+import (
+	"io/ioutil"
+	"time"
+	"fmt"
+	"os"
+	"flag"
+	"strings"
+	"github.com/nsf/termbox-go"
+)
 
 type Canvas struct {
 	Width, Height int
@@ -23,6 +25,12 @@ func (can *Canvas) Init() {
 	}
 }
 
+
+func NewCanvas(data [][]int) *Canvas {
+	can := Canvas{Width: len(data), Height: len(data[0]), Squares: data}
+	return &can
+}
+
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -33,9 +41,36 @@ func (can *Canvas) Save() {
 	fHandle, err := os.Create(fmt.Sprintf("./paintbox-%v.pnt", time.Now()))
 	check(err)
 	defer fHandle.Close()
-	_, err = fHandle.WriteString(fmt.Sprintf("%v", *can))
+	_, err = fHandle.WriteString(fmt.Sprintf("%v:%v\n%v", can.Width, can.Height, can.Squares))
 	check(err)
 }
+
+func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
+	// fmt.Printf("FLOODING %v,%v\n", targetColor, replaceColor)
+	// return
+	if targetColor == replaceColor {
+		return
+	}
+	if can.Squares[x][y] != targetColor {
+		return
+	}
+	can.Squares[x][y] = replaceColor
+	termbox.SetCell(x, y, ' ', termbox.Attribute(replaceColor), termbox.Attribute(replaceColor))
+	if x > 0 {
+		can.FloodFill(x-1, y, targetColor, replaceColor)
+	}
+	if x < can.Width-1 {
+		can.FloodFill(x+1, y, targetColor, replaceColor)
+	}
+	if y > 0 {
+		can.FloodFill(x, y-1, targetColor, replaceColor)
+	}
+	if y < can.Height-1 {
+		can.FloodFill(x, y+1, targetColor, replaceColor)
+	}
+	return
+}
+
 
 type Cursor struct {
 	xCoord, yCoord int
@@ -43,63 +78,96 @@ type Cursor struct {
 	colorInt       int
 }
 
-func (c *Cursor) moveLeft() {
-	if c.xCoord-1 >= 0 {
-		c.xCoord -= 1
+func (cur *Cursor) moveLeft() {
+	if cur.xCoord > 0 {
+		cur.xCoord -= 1
 	}
 }
 
-func (c *Cursor) moveRight() {
+func (cur *Cursor) moveRight() {
 	w, _ := termbox.Size()
-	if c.xCoord+1 <= w {
-		c.xCoord += 1
+	if cur.xCoord < w-1 {
+		cur.xCoord += 1
 	}
 }
 
-func (c *Cursor) moveDown() {
-	if c.yCoord-1 >= 0 {
-		c.yCoord -= 1
+func (cur *Cursor) moveDown() {
+	if cur.yCoord > 0 {
+		cur.yCoord -= 1
 	}
 }
 
-func (c *Cursor) moveUp() {
+func (cur *Cursor) moveUp() {
 	_, h := termbox.Size()
-	if c.yCoord+1 <= h {
-		c.yCoord += 1
+	if cur.yCoord < h-1 {
+		cur.yCoord += 1
 	}
 }
 
-func (c *Cursor) Position() (int, int) {
-	return c.xCoord, c.yCoord
+func (cur *Cursor) Position() (int, int) {
+	return cur.xCoord, cur.yCoord
 }
 
-func (c *Cursor) placeColor(can *Canvas) {
-	x, y := c.Position()
-	can.Squares[x][y] = c.colorInt
-	termbox.SetCell(x, y, ' ', c.color, c.color)
+func (cur *Cursor) placeColor(can *Canvas) {
+	x, y := cur.Position()
+	can.Squares[x][y] = cur.colorInt
+	termbox.SetCell(x, y, ' ', cur.color, cur.color)
 }
 
-func (c *Cursor) delete(can *Canvas) {
-	x, y := c.Position()
+func (cur *Cursor) FloodFill(can *Canvas) {
+	x, y := cur.Position()
+	targetColor := can.Squares[x][y]
+	replaceColor := cur.colorInt
+	can.FloodFill(x, y, targetColor, replaceColor)
+}
+
+func (cur *Cursor) delete(can *Canvas) {
+	x, y := cur.Position()
 	can.Squares[x][y] = 0
 	termbox.SetCell(x, y, ' ', termbox.ColorDefault, termbox.ColorDefault)
 }
 
-func (c *Cursor) changeColor() {
-	c.color = termbox.Attribute((c.color % 8) + 1)
-	c.colorInt = (c.colorInt % 8) + 1
+func (cur *Cursor) changeColor() {
+	cur.color = termbox.Attribute((cur.color % 8) + 1)
+	cur.colorInt = (cur.colorInt % 8) + 1
 }
 
-func draw(c *Cursor, canPtr *Canvas) {
-	termbox.SetCursor(c.xCoord, c.yCoord)
+// Set the cursor to its defined location + flush
+func draw(cur *Cursor, canPtr *Canvas) {
+	termbox.SetCursor(cur.xCoord, cur.yCoord)
 	termbox.Flush()
 }
 
-func main() {
+// Attempt to load canvas file
+func load(path string) (*Canvas, error) {
+	fBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	fData := string(fBytes)
+	lines := strings.Split(fData, "\n")
+	if len(lines) < 2 {
+		return nil, fmt.Errorf("Bad paintbox file")
+	}
+	return nil, fmt.Errorf("Can't load yet.")
+}
+
+type Config struct {
+	LoadPath string
+}
+
+var config Config
+
+func init() {
+	flag.StringVar(&config.LoadPath, "load", "", "file path to load a previous work from")
+	flag.Parse()
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func main() {
 	defer termbox.Close()
 
 	event_queue := make(chan termbox.Event)
@@ -110,7 +178,7 @@ func main() {
 	}()
 	// disTimer := time.NewTicker(2 * time.Second)
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 1}
+	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2}
 	canvas := Canvas{}
 	canvas.Init()
 	canPtr := &canvas
@@ -124,7 +192,7 @@ loop:
 			case termbox.EventKey:
 				switch ev.Key {
 				case termbox.KeyEsc:
-					canPtr.Save()
+					// canPtr.Save()
 					break loop
 				case termbox.KeyArrowDown:
 					cPtr.moveUp()
@@ -136,6 +204,8 @@ loop:
 					cPtr.moveLeft()
 				case termbox.KeyTab:
 					cPtr.changeColor()
+				case termbox.KeyCtrlF:
+					cPtr.FloodFill(canPtr)
 				case termbox.KeySpace:
 					cPtr.placeColor(canPtr)
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
