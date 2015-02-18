@@ -1,15 +1,18 @@
 package main
 
 import (
-	"io/ioutil"
-	"time"
-	"fmt"
-	"os"
 	"flag"
-	"strings"
+	"fmt"
 	"github.com/nsf/termbox-go"
+	"io/ioutil"
+	"os"
+	"strings"
+	"time"
 )
 
+/**
+ * Canvas zone
+ */
 type Canvas struct {
 	Width, Height int
 	Squares       [][]int
@@ -24,7 +27,6 @@ func (can *Canvas) Init() {
 		can.Squares[i] = make([]int, can.Height)
 	}
 }
-
 
 func NewCanvas(data [][]int) *Canvas {
 	can := Canvas{Width: len(data), Height: len(data[0]), Squares: data}
@@ -45,9 +47,15 @@ func (can *Canvas) Save() {
 	check(err)
 }
 
+func (can *Canvas) draw() {
+	for x, column := range can.Squares {
+		for y, color := range column {
+			termbox.SetCell(x, y, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		}
+	}
+}
+
 func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
-	// fmt.Printf("FLOODING %v,%v\n", targetColor, replaceColor)
-	// return
 	if targetColor == replaceColor {
 		return
 	}
@@ -71,6 +79,9 @@ func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 	return
 }
 
+/**
+ * Cursor Zone
+ */
 
 type Cursor struct {
 	xCoord, yCoord int
@@ -131,6 +142,10 @@ func (cur *Cursor) changeColor() {
 	cur.color = termbox.Attribute((cur.color % 8) + 1)
 	cur.colorInt = (cur.colorInt % 8) + 1
 }
+
+/**
+ * Static Zone
+ */
 
 // Set the cursor to its defined location + flush
 func draw(cur *Cursor, canPtr *Canvas) {
