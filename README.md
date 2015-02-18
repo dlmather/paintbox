@@ -1,6 +1,6 @@
 # paintbox
 Simple termbox-go based pixel painting
-![](https://raw.github.com/dlmather/paintbox/master/path/hi.gif)
+![Hi](https://raw.github.com/dlmather/paintbox/master/hi.gif)
 # TODO:
 
 - Add ability to delete squares √
