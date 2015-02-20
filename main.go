@@ -75,15 +75,15 @@ loop:
 					// canPtr.Save()
 					break loop
 				case termbox.KeyArrowDown:
-					cPtr.moveUp()
+					cPtr.MoveUp()
 				case termbox.KeyArrowUp:
-					cPtr.moveDown()
+					cPtr.MoveDown()
 				case termbox.KeyArrowRight:
-					cPtr.moveRight()
+					cPtr.MoveRight()
 				case termbox.KeyArrowLeft:
-					cPtr.moveLeft()
+					cPtr.MoveLeft()
 				case termbox.KeyTab:
-					cPtr.changeColor()
+					cPtr.ChangeColor()
 				case termbox.KeyCtrlL:
 					cPtr.Line(canPtr)
 				case termbox.KeyCtrlF:
@@ -91,9 +91,9 @@ loop:
 				case termbox.KeyCtrlP:
 					cPtr.Pos()
 				case termbox.KeySpace:
-					cPtr.placeColor(canPtr)
+					cPtr.PlaceColor(canPtr)
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
-					cPtr.delete(canPtr)
+					cPtr.Delete(canPtr)
 				}
 				draw(cPtr, canPtr)
 			case termbox.EventError:
