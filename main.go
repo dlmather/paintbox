@@ -55,6 +55,7 @@ func (can *Canvas) draw() {
 	}
 }
 
+// http://en.wikipedia.org/wiki/Flood_fill
 func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 	if targetColor == replaceColor {
 		return
@@ -79,14 +80,52 @@ func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 	return
 }
 
+// http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
+func (can *Canvas) BresenhamLine(x0, y0, x1, y1, color int) {
+	dx := x1 - x0
+	if dx < 0 {
+		dx = -dx
+	}
+	dy := y1 - y0
+	if dy < 0 {
+		dy = -dy
+	}
+	sx := 1
+	if x0 > x1 {
+		sx = -1
+	}
+	sy := 1
+	if y0 > y1 {
+		sy = -1
+	}
+	err := dx - dy
+	for {
+		can.Squares[x0][y0] = color
+		termbox.SetCell(x0, y0, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		if x0 == x1 && y0 == y1 {
+			break
+		}
+		e2 := 2 * err
+		if e2 > -dy {
+			err -= dy
+			x0 += sx
+		}
+		if e2 < dx {
+			err += dx
+			y0 += sy
+		}
+	}
+}
+
 /**
  * Cursor Zone
  */
 
 type Cursor struct {
-	xCoord, yCoord int
-	color          termbox.Attribute
-	colorInt       int
+	xCoord, yCoord         int
+	lineXCoord, lineYCoord int
+	color                  termbox.Attribute
+	colorInt               int
 }
 
 func (cur *Cursor) moveLeft() {
@@ -130,6 +169,27 @@ func (cur *Cursor) FloodFill(can *Canvas) {
 	targetColor := can.Squares[x][y]
 	replaceColor := cur.colorInt
 	can.FloodFill(x, y, targetColor, replaceColor)
+}
+
+func (cur *Cursor) Line(can *Canvas) {
+	x, y := cur.Position()
+	lineX := cur.lineXCoord
+	lineY := cur.lineYCoord
+	if lineX == -1 && lineY == -1 {
+		termbox.SetCell(x, y, 'x', termbox.Attribute((cur.color % 8) + 1), cur.color)
+		cur.lineXCoord = x
+		cur.lineYCoord = y
+	} else {
+		can.BresenhamLine(lineX, lineY, x, y, cur.colorInt)
+		cur.lineXCoord = -1
+		cur.lineYCoord = -1
+	}
+}
+
+// Useful for debugging
+func (cur *Cursor) Pos() {
+	x, y := cur.Position()
+	fmt.Printf("\t%v:%v", x, y)
 }
 
 func (cur *Cursor) delete(can *Canvas) {
@@ -193,7 +253,7 @@ func main() {
 	}()
 	// disTimer := time.NewTicker(2 * time.Second)
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2}
+	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, lineXCoord: -1, lineYCoord: -1}
 	canvas := Canvas{}
 	canvas.Init()
 	canPtr := &canvas
@@ -219,8 +279,12 @@ loop:
 					cPtr.moveLeft()
 				case termbox.KeyTab:
 					cPtr.changeColor()
+				case termbox.KeyCtrlL:
+					cPtr.Line(canPtr)
 				case termbox.KeyCtrlF:
 					cPtr.FloodFill(canPtr)
+				case termbox.KeyCtrlP:
+					cPtr.Pos()
 				case termbox.KeySpace:
 					cPtr.placeColor(canPtr)
 				case termbox.KeyBackspace, termbox.KeyBackspace2:
