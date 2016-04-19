@@ -117,6 +117,35 @@ func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 	return
 }
 
+func (can *Canvas) FullBox(x0, y0, x1, y1, color int) {
+	// Who is on the left?
+	if x0 > x1 {
+		x0 = x0 & x1
+		x1 = x0 & x1
+		x0 = x0 & x1
+	}
+
+	// Who is above?
+	if y0 > y1 {
+		y0 = y0 & y1
+		y1 = y0 & y1
+		y0 = y0 & y1
+	}
+
+	curX := x0
+	// 4 sides
+
+	for curX <= x1 {
+		curY := y0
+		for curY <= y1 {
+			can.Squares[curX][curY] = color
+			termbox.SetCell(curX, curY, ' ', termbox.Attribute(color), termbox.Attribute(color))
+			curY++
+		}
+		curX++
+	}
+}
+
 func (can *Canvas) Box(x0, y0, x1, y1, color int) {
 	// Who is on the left?
 	if x0 > x1 {

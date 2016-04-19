@@ -80,6 +80,23 @@ func (cur *Cursor) Box(can *Canvas) {
 	}
 }
 
+// Draws a filled box starting at initial corner
+// Ending at final corner
+func (cur *Cursor) FullBox(can *Canvas) {
+	x, y := cur.Position()
+	lineX := cur.lineXCoord
+	lineY := cur.lineYCoord
+	if lineX == -1 && lineY == -1 {
+		termbox.SetCell(x, y, 'B', termbox.Attribute((cur.color%8)+1), cur.color)
+		cur.lineXCoord = x
+		cur.lineYCoord = y
+	} else {
+		can.FullBox(lineX, lineY, x, y, cur.colorInt)
+		cur.lineXCoord = -1
+		cur.lineYCoord = -1
+	}
+}
+
 // Draws a line between the point selected when first run
 // and point selected when second run
 func (cur *Cursor) Line(can *Canvas) {

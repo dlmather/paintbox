@@ -89,6 +89,8 @@ loop:
 					cPtr.MoveLeft()
 				case termbox.KeyTab:
 					cPtr.ChangeColor()
+				case termbox.KeyCtrlX:
+					cPtr.FullBox(canPtr)
 				case termbox.KeyCtrlB:
 					cPtr.Box(canPtr)
 				case termbox.KeyCtrlL:
