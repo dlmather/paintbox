@@ -12,7 +12,6 @@ import (
 type Cursor struct {
 	xCoord, yCoord         int
 	lineXCoord, lineYCoord int
-	boxXCoord, boxYCoord   int // Re-use line?
 	color                  termbox.Attribute
 	colorInt               int
 }
