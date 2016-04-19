@@ -14,6 +14,7 @@ type Cursor struct {
 	startXCoord, startYCoord int
 	color                    termbox.Attribute
 	colorInt                 int
+	copyStack                *CanvasStack
 }
 
 // TODO: Move based on canvas params, not termbox
@@ -86,13 +87,39 @@ func (cur *Cursor) FullBox(can *Canvas) {
 	lineX := cur.startXCoord
 	lineY := cur.startYCoord
 	if lineX == -1 && lineY == -1 {
-		termbox.SetCell(x, y, 'B', termbox.Attribute((cur.color%8)+1), cur.color)
+		termbox.SetCell(x, y, 'x', termbox.Attribute((cur.color%8)+1), cur.color)
 		cur.startXCoord = x
 		cur.startYCoord = y
 	} else {
 		can.FullBox(lineX, lineY, x, y, cur.colorInt)
 		cur.startXCoord = -1
 		cur.startYCoord = -1
+	}
+}
+
+func (cur *Cursor) PasteBox(can *Canvas) {
+	x, y := cur.Position()
+	// HANDLE POP STUFF HERE
+	copy := cur.copyStack.Pop()
+	if copy == nil {
+		return
+	}
+	can.PasteBox(x, y, copy)
+}
+
+func (cur *Cursor) CopyBox(can *Canvas) {
+	x, y := cur.Position()
+	lineX := cur.startXCoord
+	lineY := cur.startYCoord
+	if lineX == -1 && lineY == -1 {
+		termbox.SetCell(x, y, 'x', termbox.Attribute((cur.color%8)+1), cur.color)
+		cur.startXCoord = x
+		cur.startYCoord = y
+	} else {
+		canvas := can.CopyBox(lineX, lineY, x, y)
+		cur.startXCoord = -1
+		cur.startYCoord = -1
+		cur.copyStack.Push(canvas)
 	}
 }
 

@@ -57,12 +57,15 @@ func main() {
 		}
 	}()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, startXCoord: -1, startYCoord: -1}
+	copyStack := &CanvasStack{}
+	copyStack.Init()
+	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, startXCoord: -1, startYCoord: -1, copyStack: copyStack}
 	canvas := Canvas{}
 	if config.LoadPath != "" {
 		canvas = *Load(config.LoadPath)
 	} else {
-		canvas.Init()
+		w, h := termbox.Size()
+		canvas.Init(w, h)
 	}
 	canPtr := &canvas
 	cPtr := &c
@@ -91,14 +94,18 @@ loop:
 					cPtr.ChangeColor()
 				case termbox.KeyCtrlX:
 					cPtr.FullBox(canPtr)
+				case termbox.KeyCtrlC:
+					cPtr.CopyBox(canPtr)
+				case termbox.KeyCtrlP:
+					cPtr.PasteBox(canPtr)
 				case termbox.KeyCtrlB:
 					cPtr.Box(canPtr)
 				case termbox.KeyCtrlL:
 					cPtr.Line(canPtr)
 				case termbox.KeyCtrlF:
 					cPtr.FloodFill(canPtr)
-				case termbox.KeyCtrlP:
-					cPtr.Pos()
+				//case termbox.KeyCtrlP:
+				//	cPtr.Pos()
 				case termbox.KeySpace:
 					cPtr.PlaceColor(canPtr)
 				case termbox.KeyBackspace, termbox.KeyBackspace2:

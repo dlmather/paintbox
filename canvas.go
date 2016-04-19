@@ -18,8 +18,31 @@ type Canvas struct {
 	Squares       [][]int
 }
 
-func (can *Canvas) Init() {
-	w, h := termbox.Size()
+type CanvasStack struct {
+	internal []*Canvas
+}
+
+func (cs *CanvasStack) Init() {
+	cs.internal = make([]*Canvas, 0)
+}
+
+func (cs *CanvasStack) Push(can *Canvas) {
+	cs.internal = append(cs.internal, can)
+}
+
+func (cs *CanvasStack) Pop() *Canvas {
+	if len(cs.internal) == 0 {
+		return nil
+	}
+	last := cs.internal[len(cs.internal)-1]
+	if len(cs.internal) == 1 {
+		return last
+	}
+	cs.internal = cs.internal[0 : len(cs.internal)-1]
+	return last
+}
+
+func (can *Canvas) Init(w, h int) {
 	can.Width = w
 	can.Height = h
 	can.Squares = make([][]int, can.Width)
@@ -122,15 +145,11 @@ func (can *Canvas) FullBox(x0, y0, x1, y1, color int) {
 	if x0 > x1 {
 		x0, x1 = x1, x0
 	}
-
 	// Who is above?
 	if y0 > y1 {
 		y0, y1 = y1, y0
 	}
-
 	curX := x0
-	// 4 sides
-
 	for curX <= x1 {
 		curY := y0
 		for curY <= y1 {
@@ -142,21 +161,65 @@ func (can *Canvas) FullBox(x0, y0, x1, y1, color int) {
 	}
 }
 
+func (can *Canvas) CopyBox(x0, y0, x1, y1 int) *Canvas {
+	// Who is on the left?
+	if x0 > x1 {
+		x0, x1 = x1, x0
+	}
+	// Who is above?
+	if y0 > y1 {
+		y0, y1 = y1, y0
+	}
+	curX := x0
+	subCanvas := &Canvas{}
+	subCanvas.Init(x1-x0+1, y1-y0+1)
+	for curX <= x1 {
+		curY := y0
+		for curY <= y1 {
+			subCanvas.Squares[curX][curY] = can.Squares[curX][curY]
+			curY++
+		}
+		curX++
+	}
+	return subCanvas
+}
+
+func (can *Canvas) PasteBox(x0, y0 int, subCanvas *Canvas) {
+	curX := x0
+	subCurX := 0
+	for subCurX < subCanvas.Width {
+		subCurY := 0
+		curY := y0
+		for subCurY < subCanvas.Height {
+			// BOUNDS CHECK
+			// if curX > can.Width-1 || curY > can.Height-1 {
+			// 	// SKIP
+			// 	curY++
+			// 	continue
+			// }
+			color := subCanvas.Squares[subCurX][subCurY]
+			termbox.SetCell(curX, curY, ' ', termbox.Attribute(color), termbox.Attribute(color))
+			can.Squares[curX][curY] = color
+			subCurY++
+			curY++
+		}
+		subCurX++
+		curX++
+	}
+}
+
 func (can *Canvas) Box(x0, y0, x1, y1, color int) {
 	// Who is on the left?
 	if x0 > x1 {
 		x0, x1 = x1, x0
 	}
-
 	// Who is above?
 	if y0 > y1 {
 		y0, y1 = y1, y0
 	}
-
 	curX := x0
 	curY := y0
 	// 4 sides
-
 	// TOP and BOTTOM
 	for curX <= x1 {
 		can.Squares[curX][y0] = color
@@ -165,7 +228,6 @@ func (can *Canvas) Box(x0, y0, x1, y1, color int) {
 		termbox.SetCell(curX, y1, ' ', termbox.Attribute(color), termbox.Attribute(color))
 		curX++
 	}
-
 	// LEFT and RIGHT with redundant ends
 	for curY <= y1 {
 		can.Squares[x0][curY] = color
