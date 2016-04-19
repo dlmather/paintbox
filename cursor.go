@@ -10,10 +10,10 @@ import (
 
 // Stores state for on-screen cursor and its operations
 type Cursor struct {
-	xCoord, yCoord         int
-	lineXCoord, lineYCoord int
-	color                  termbox.Attribute
-	colorInt               int
+	xCoord, yCoord           int
+	startXCoord, startYCoord int
+	color                    termbox.Attribute
+	colorInt                 int
 }
 
 // TODO: Move based on canvas params, not termbox
@@ -66,16 +66,16 @@ func (cur *Cursor) FloodFill(can *Canvas) {
 // Ending at final corner
 func (cur *Cursor) Box(can *Canvas) {
 	x, y := cur.Position()
-	lineX := cur.lineXCoord
-	lineY := cur.lineYCoord
+	lineX := cur.startXCoord
+	lineY := cur.startYCoord
 	if lineX == -1 && lineY == -1 {
 		termbox.SetCell(x, y, 'B', termbox.Attribute((cur.color%8)+1), cur.color)
-		cur.lineXCoord = x
-		cur.lineYCoord = y
+		cur.startXCoord = x
+		cur.startYCoord = y
 	} else {
 		can.Box(lineX, lineY, x, y, cur.colorInt)
-		cur.lineXCoord = -1
-		cur.lineYCoord = -1
+		cur.startXCoord = -1
+		cur.startYCoord = -1
 	}
 }
 
@@ -83,16 +83,16 @@ func (cur *Cursor) Box(can *Canvas) {
 // Ending at final corner
 func (cur *Cursor) FullBox(can *Canvas) {
 	x, y := cur.Position()
-	lineX := cur.lineXCoord
-	lineY := cur.lineYCoord
+	lineX := cur.startXCoord
+	lineY := cur.startYCoord
 	if lineX == -1 && lineY == -1 {
 		termbox.SetCell(x, y, 'B', termbox.Attribute((cur.color%8)+1), cur.color)
-		cur.lineXCoord = x
-		cur.lineYCoord = y
+		cur.startXCoord = x
+		cur.startYCoord = y
 	} else {
 		can.FullBox(lineX, lineY, x, y, cur.colorInt)
-		cur.lineXCoord = -1
-		cur.lineYCoord = -1
+		cur.startXCoord = -1
+		cur.startYCoord = -1
 	}
 }
 
@@ -100,16 +100,16 @@ func (cur *Cursor) FullBox(can *Canvas) {
 // and point selected when second run
 func (cur *Cursor) Line(can *Canvas) {
 	x, y := cur.Position()
-	lineX := cur.lineXCoord
-	lineY := cur.lineYCoord
+	lineX := cur.startXCoord
+	lineY := cur.startYCoord
 	if lineX == -1 && lineY == -1 {
 		termbox.SetCell(x, y, 'x', termbox.Attribute((cur.color%8)+1), cur.color)
-		cur.lineXCoord = x
-		cur.lineYCoord = y
+		cur.startXCoord = x
+		cur.startYCoord = y
 	} else {
 		can.BresenhamLine(lineX, lineY, x, y, cur.colorInt)
-		cur.lineXCoord = -1
-		cur.lineYCoord = -1
+		cur.startXCoord = -1
+		cur.startYCoord = -1
 	}
 }
 

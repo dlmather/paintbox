@@ -57,7 +57,7 @@ func main() {
 		}
 	}()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, lineXCoord: -1, lineYCoord: -1}
+	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, startXCoord: -1, startYCoord: -1}
 	canvas := Canvas{}
 	if config.LoadPath != "" {
 		canvas = *Load(config.LoadPath)
