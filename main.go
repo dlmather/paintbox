@@ -11,7 +11,6 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-
 // Set the cursor to its defined location + flush
 func draw(cur *Cursor, canPtr *Canvas) {
 	termbox.SetCursor(cur.xCoord, cur.yCoord)
@@ -60,7 +59,11 @@ func main() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, lineXCoord: -1, lineYCoord: -1}
 	canvas := Canvas{}
-	canvas.Init()
+	if config.LoadPath != "" {
+		canvas = *Load(config.LoadPath)
+	} else {
+		canvas.Init()
+	}
 	canPtr := &canvas
 	cPtr := &c
 	draw(cPtr, canPtr)
@@ -71,8 +74,10 @@ loop:
 			switch ev.Type {
 			case termbox.EventKey:
 				switch ev.Key {
+				case termbox.KeyCtrlQ:
+					canPtr.Save()
+					break loop
 				case termbox.KeyEsc:
-					// canPtr.Save()
 					break loop
 				case termbox.KeyArrowDown:
 					cPtr.MoveUp()
@@ -84,6 +89,8 @@ loop:
 					cPtr.MoveLeft()
 				case termbox.KeyTab:
 					cPtr.ChangeColor()
+				case termbox.KeyCtrlB:
+					cPtr.Box(canPtr)
 				case termbox.KeyCtrlL:
 					cPtr.Line(canPtr)
 				case termbox.KeyCtrlF:

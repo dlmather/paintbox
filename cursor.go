@@ -12,6 +12,7 @@ import (
 type Cursor struct {
 	xCoord, yCoord         int
 	lineXCoord, lineYCoord int
+	boxXCoord, boxYCoord   int // Re-use line?
 	color                  termbox.Attribute
 	colorInt               int
 }
@@ -60,6 +61,23 @@ func (cur *Cursor) FloodFill(can *Canvas) {
 	targetColor := can.Squares[x][y]
 	replaceColor := cur.colorInt
 	can.FloodFill(x, y, targetColor, replaceColor)
+}
+
+// Draws a box starting at initial corner
+// Ending at final corner
+func (cur *Cursor) Box(can *Canvas) {
+	x, y := cur.Position()
+	lineX := cur.lineXCoord
+	lineY := cur.lineYCoord
+	if lineX == -1 && lineY == -1 {
+		termbox.SetCell(x, y, 'B', termbox.Attribute((cur.color%8)+1), cur.color)
+		cur.lineXCoord = x
+		cur.lineYCoord = y
+	} else {
+		can.Box(lineX, lineY, x, y, cur.colorInt)
+		cur.lineXCoord = -1
+		cur.lineYCoord = -1
+	}
 }
 
 // Draws a line between the point selected when first run

@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -27,6 +29,12 @@ func (can *Canvas) Init() {
 }
 
 func NewCanvas(data [][]int) *Canvas {
+	width := len(data)
+	height := len(data[0])
+	w, h := termbox.Size()
+	if width != w || height != h {
+		panic(fmt.Sprintf("Error : Trying to load into a window that is different than the original ORIG %d:%d, NEW %d:%d", width, height, w, h))
+	}
 	can := Canvas{Width: len(data), Height: len(data[0]), Squares: data}
 	return &can
 }
@@ -41,8 +49,39 @@ func (can *Canvas) Save() {
 	fHandle, err := os.Create(fmt.Sprintf("./paintbox-%v.pnt", time.Now()))
 	check(err)
 	defer fHandle.Close()
-	_, err = fHandle.WriteString(fmt.Sprintf("%v:%v\n%v", can.Width, can.Height, can.Squares))
+	_, err = fHandle.WriteString(fmt.Sprintf("%v\n%v", can.Width, can.Height))
+	for _, col := range can.Squares {
+		_, err = fHandle.WriteString("\n")
+		check(err)
+		for _, val := range col {
+			_, err = fHandle.WriteString(fmt.Sprintf("%d ", val))
+			check(err)
+		}
+	}
 	check(err)
+}
+
+func Load(fName string) *Canvas {
+	fBytes, err := ioutil.ReadFile(fName)
+	check(err)
+	fData := string(fBytes)
+	var width, height int
+	lines := strings.Split(fData, "\n")
+
+	fmt.Sscanf(lines[0], "%d", &width)
+	fmt.Sscanf(lines[1], "%d", &height)
+	lines = lines[2:]
+	squares := make([][]int, width)
+	fmt.Println(width, height, lines)
+	//for index, line := range lines {
+	//	vals := strings.Fields(line)
+	//	squares[index] = make([]int, height)
+	//	for internalIndex, val := range vals {
+	//		fmt.Sscanf(val, "%d", &squares[index][internalIndex])
+	//	}
+	//}
+	fmt.Println(squares)
+	return NewCanvas(squares)
 }
 
 func (can *Canvas) draw() {
@@ -76,6 +115,44 @@ func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 		can.FloodFill(x, y+1, targetColor, replaceColor)
 	}
 	return
+}
+
+func (can *Canvas) Box(x0, y0, x1, y1, color int) {
+	// Who is on the left?
+	if x0 > x1 {
+		x0 = x0 & x1
+		x1 = x0 & x1
+		x0 = x0 & x1
+	}
+
+	// Who is above?
+	if y0 > y1 {
+		y0 = y0 & y1
+		y1 = y0 & y1
+		y0 = y0 & y1
+	}
+
+	curX := x0
+	curY := y0
+	// 4 sides
+
+	// TOP and BOTTOM
+	for curX <= x1 {
+		can.Squares[curX][y0] = color
+		termbox.SetCell(curX, y0, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		can.Squares[curX][y1] = color
+		termbox.SetCell(curX, y1, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		curX++
+	}
+
+	// LEFT and RIGHT with redundant ends
+	for curY <= y1 {
+		can.Squares[x0][curY] = color
+		termbox.SetCell(x0, curY, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		can.Squares[x1][curY] = color
+		termbox.SetCell(x1, curY, ' ', termbox.Attribute(color), termbox.Attribute(color))
+		curY++
+	}
 }
 
 // http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
