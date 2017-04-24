@@ -2,34 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"io/ioutil"
-	"strings"
-)
 
-import (
+	"github.com/dlmather/paintbox/actions"
+	"github.com/dlmather/paintbox/painter"
 	"github.com/nsf/termbox-go"
 )
-
-// Set the cursor to its defined location + flush
-func draw(cur *Cursor, canPtr *Canvas) {
-	termbox.SetCursor(cur.xCoord, cur.yCoord)
-	termbox.Flush()
-}
-
-// Attempt to load canvas file
-func load(path string) (*Canvas, error) {
-	fBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	fData := string(fBytes)
-	lines := strings.Split(fData, "\n")
-	if len(lines) < 2 {
-		return nil, fmt.Errorf("Bad paintbox file")
-	}
-	return nil, fmt.Errorf("Can't load yet.")
-}
 
 // For now, config contains path for load
 type Config struct {
@@ -49,69 +26,28 @@ func init() {
 
 func main() {
 	defer termbox.Close()
-
-	event_queue := make(chan termbox.Event)
+	eventQueue := make(chan termbox.Event)
 	go func() {
 		for {
-			event_queue <- termbox.PollEvent()
+			eventQueue <- termbox.PollEvent()
 		}
 	}()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	copyStack := &CanvasStack{}
-	copyStack.Init()
-	c := Cursor{xCoord: 0, yCoord: 0, color: termbox.ColorRed, colorInt: 2, startXCoord: -1, startYCoord: -1, copyStack: copyStack}
-	canvas := Canvas{}
-	if config.LoadPath != "" {
-		canvas = *Load(config.LoadPath)
-	} else {
-		w, h := termbox.Size()
-		canvas.Init(w, h)
-	}
-	canPtr := &canvas
-	cPtr := &c
-	draw(cPtr, canPtr)
-loop:
+	myPainter := painter.New()
+	myPainter.Draw()
 	for {
 		select {
-		case ev := <-event_queue:
+		case ev := <-eventQueue:
 			switch ev.Type {
 			case termbox.EventKey:
-				switch ev.Key {
-				case termbox.KeyCtrlQ:
-					canPtr.Save()
-					break loop
-				case termbox.KeyEsc:
-					break loop
-				case termbox.KeyArrowDown:
-					cPtr.MoveUp()
-				case termbox.KeyArrowUp:
-					cPtr.MoveDown()
-				case termbox.KeyArrowRight:
-					cPtr.MoveRight()
-				case termbox.KeyArrowLeft:
-					cPtr.MoveLeft()
-				case termbox.KeyTab:
-					cPtr.ChangeColor()
-				case termbox.KeyCtrlX:
-					cPtr.FullBox(canPtr)
-				case termbox.KeyCtrlC:
-					cPtr.CopyBox(canPtr)
-				case termbox.KeyCtrlP:
-					cPtr.PasteBox(canPtr)
-				case termbox.KeyCtrlB:
-					cPtr.Box(canPtr)
-				case termbox.KeyCtrlL:
-					cPtr.Line(canPtr)
-				case termbox.KeyCtrlF:
-					cPtr.FloodFill(canPtr)
-				//case termbox.KeyCtrlP:
-				//	cPtr.Pos()
-				case termbox.KeySpace:
-					cPtr.PlaceColor(canPtr)
-				case termbox.KeyBackspace, termbox.KeyBackspace2:
-					cPtr.Delete(canPtr)
+				// TODO: Rewritable bindings
+				if action, ok := actions.ActionBinding[ev.Key]; ok {
+					err := action(myPainter)
+					if err != nil {
+						panic(err)
+					}
 				}
-				draw(cPtr, canPtr)
+				myPainter.Draw()
 			case termbox.EventError:
 				panic(ev.Err)
 			}
