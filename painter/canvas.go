@@ -86,6 +86,7 @@ func (can *Canvas) FloodFill(x, y, targetColor, replaceColor int) {
 	if can.Squares[x][y] != targetColor {
 		return
 	}
+	can.Squares[x][y] = replaceColor
 	can.push(x, y, replaceColor)
 	if x > 0 {
 		can.FloodFill(x-1, y, targetColor, replaceColor)

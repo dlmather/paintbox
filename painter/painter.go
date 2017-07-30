@@ -1,6 +1,9 @@
 package painter
 
-import "github.com/nsf/termbox-go"
+import (
+	"github.com/dlmather/paintbox/display"
+	"github.com/nsf/termbox-go"
+)
 
 const (
 	prevUnset  = -1
@@ -27,18 +30,21 @@ func (c *Cursor) PrevUnset() bool {
 }
 
 type Painter struct {
-	Cursor        *Cursor
 	Canvas        *Canvas
 	CanvasHistory *CanvasStack
+	Cursor        *Cursor
+	Display       *display.Display
 }
 
 func New() *Painter {
 	w, h := termbox.Size()
 	p := &Painter{
-		Cursor:        NewCursor(),
-		Canvas:        NewCanvas(w, h),
+		Canvas:        NewCanvas(w, h-3),
 		CanvasHistory: NewCanvasStack(),
+		Cursor:        NewCursor(),
+		Display:       display.New(w, h),
 	}
+	p.Display.Draw()
 	return p
 }
 
@@ -50,7 +56,7 @@ func (p *Painter) Draw() {
 
 func MoveLeft(p *Painter) error {
 	if p.Cursor.X == 0 {
-		// Resize strategy
+		// Resize!
 	}
 	p.Cursor.X -= 1
 	return nil
@@ -58,7 +64,7 @@ func MoveLeft(p *Painter) error {
 
 func MoveRight(p *Painter) error {
 	if p.Cursor.X == p.Canvas.Width {
-		// Resize strategy
+		// Resize!
 	}
 	p.Cursor.X += 1
 	return nil
@@ -82,6 +88,8 @@ func MoveDown(p *Painter) error {
 
 func CycleColor(p *Painter) error {
 	p.Cursor.Color, p.Cursor.PrevColor = (p.Cursor.Color%colorLimit)+1, p.Cursor.Color
+	p.Display.CurrentColor = p.Cursor.Color
+	p.Display.Draw()
 	return nil
 }
 
